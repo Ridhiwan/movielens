@@ -1,0 +1,29 @@
+---
+title: "Movie Recommendation System"
+author: "Ridhiwan Mseya"
+date: "9/24/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## INTRODUCTION
+
+&nbsp;&nbsp;&nbsp;&nbsp;In different networks and services users have the ability to rate and share their comments on movies, series or shows that they have watched. The feedback given by the users helps the service provider to know which kinds of movies perform better than others in a given demographic. This allows the service provider to improve their offerings. In this project we will make a movie recommendation system that displays certain kinds of movies to a user depending on how they rated the movies they previously watched or depending on what other similar users have previously watched and rated. This will allow the service provider to order different movies for different users more accurately for the goal of creating satisfied customers.
+  
+&nbsp;&nbsp;&nbsp;&nbsp;To achieve this we will use the "MovieLens data set" containing 10 million observations that is available here:<https://grouplens.org/datasets/movielens/10m/>. The data set was initially split into "edx" and "validation". We will firstly check the structure of the edx data set to see if it has what we need for the modelling of our system. edx will be used for the creation of our model and the validation set will be used for evaluation of our final model.
+
+```{r edx, echo = FALSE}
+#Show the structure of the dataset
+load("edx")
+str(edx)
+```
+Our edx data set contains a bit more than 9 million observables the remaining are in the validation set. It contains six variables to which out of the bat, the most important seem to be the "userId", "movieId", "rating" and "genres". The userId is the Id number given to the person watching and rating the movie, movieId is the Id number of the movie being watched and rated, rating is the rating given to the movie ranging from 1 to 5 and genres is the genre of the movie i.e Comedy, Thriller, Action or a combination of them(Action|Thriller).
+
+&nbsp;&nbsp;&nbsp;&nbsp;The goal is to use these variables to train and test the best machine learning model that will give the most accurate predictions. The accuracy of these predictions will be tested using the root mean squared error(RMSE). The model with the lowest rmse is the best model. We will split the edx data set into training and test sets and each time we will create a model and test whether it is performing better than the previous. The models will be different from each other by countering for common problems in machine learning like overfitting and regularization. Finally we could even combine different models to check if the results are any better.
+
+## ANALYSIS
+
+&nbsp;&nbsp;&nbsp;&nbsp;
