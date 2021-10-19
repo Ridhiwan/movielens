@@ -26,4 +26,19 @@ Our edx data set contains a bit more than 9 million observables the remaining ar
 
 ## ANALYSIS
 
-&nbsp;&nbsp;&nbsp;&nbsp;
+&nbsp;&nbsp;&nbsp;&nbsp;We will start with a correlation study on the variables to check if they are any that are too strongly correlated to affect correct predictions from our models. Before we perform the correlation analysis we will first convert some columns with strings to factors and remove columns which are not significant i.e title. We will also use a sample of the data rather than the whole edx dataset.
+
+```{r edx, echo=FALSE}
+library(tidyverse)
+library(corrplot)
+library(Hmisc)
+
+ind <- sample(1:9000055,50000) # take a sample of the edx data set
+edx_smp <- edx[ind] # choose the sample from edx
+edx_cor <- edx_smp %>% select(-title) # remove the title column
+edx_cor$genres <- as.numeric(as.factor(edx_cor$genres)) # change the genre column to numeric factors
+corrlt <- rcorr(as.matrix(edx_cor)) # create the correlation object
+corrplot(corrlt$r, type = "upper", order = "hclust", 
+         tl.col = "black", tl.srt = 45, title = "Correlation of the Variables") # plot the correlations with their significance
+```
+There is no significant correlation between the variables except for timestamp and movieId  which have a positive correlation.
