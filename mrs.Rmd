@@ -26,19 +26,29 @@ Our edx data set contains a bit more than 9 million observables the remaining ar
 
 ## ANALYSIS
 
-&nbsp;&nbsp;&nbsp;&nbsp;We will start with a correlation study on the variables to check if they are any that are too strongly correlated to affect correct predictions from our models. Before we perform the correlation analysis we will first convert some columns with strings to factors and remove columns which are not significant i.e title. We will also use a sample of the data rather than the whole edx dataset.
+&nbsp;&nbsp;&nbsp;&nbsp;We will start with a correlation study on the variables to check if they are any that are too strongly correlated to affect correct predictions from our models. Before we perform the correlation analysis we will first convert some columns with strings to factors and remove columns which are not significant i.e title. We will also use a sample of the data rather than the whole edx dataset for mmost of the analysis that involves exploring the dataset.
 
 ```{r edx, echo=FALSE}
 library(tidyverse)
 library(corrplot)
 library(Hmisc)
 
+set.seed(1, sample.kind = "Rounding") # set a seed so that the results are always the same
 ind <- sample(1:9000055,50000) # take a sample of the edx data set
 edx_smp <- edx[ind] # choose the sample from edx
-edx_cor <- edx_smp %>% select(-title) # remove the title column
-edx_cor$genres <- as.numeric(as.factor(edx_cor$genres)) # change the genre column to numeric factors
-corrlt <- rcorr(as.matrix(edx_cor)) # create the correlation object
+edx_smp <- edx_smp %>% select(-title) # remove the title column
+edx_smp$genres <- as.numeric(as.factor(edx_smp$genres)) # change the genre column to numeric factors
+corrlt <- rcorr(as.matrix(edx_smp)) # create the correlation object
 corrplot(corrlt$r, type = "upper", order = "hclust", 
          tl.col = "black", tl.srt = 45, title = "Correlation of the Variables") # plot the correlations with their significance
 ```
-There is no significant correlation between the variables except for timestamp and movieId  which have a positive correlation.
+There is no significant correlation between the variables except for timestamp-movieId and rating-genres which have a positive correlation but with low significance.
+&nbsp;&nbsp;&nbsp;&nbsp;Next we will check if we can reduce the dimensions of our data and understand it with few predictors. We can check for this using principal component analysis. We will exclude the userId in the analysis and use it to represent the users.
+
+```{r edx, echo=FALSE}
+edx_pc <- edx_smp %>% select(-userId) #deselect the userId
+edx_pca <- prcomp(edx_pc, scale = TRUE)
+screeplot(edx_pca, type = "line", main = "Scree plot", cex.main = 1.8)
+```
+
+In the scree plot the highest variance is contained in the first three principal components and there is only a total of 4 principal components showing that the data can be reduced to fewer dimensions and based on the userId there could be some clear clustering of our data.
