@@ -28,7 +28,7 @@ Our edx data set contains a bit more than 9 million observables the remaining ar
 
 &nbsp;&nbsp;&nbsp;&nbsp;We will start with a correlation study on the variables to check if they are any that are too strongly correlated to affect correct predictions from our models. Before we perform the correlation analysis we will first convert some columns with strings to factors and remove columns which are not significant i.e title. We will also use a sample of the data rather than the whole edx dataset for mmost of the analysis that involves exploring the dataset.
 
-```{r edx, echo=FALSE}
+```{r corr, echo=FALSE, warning=FALSE, message=FALSE}
 library(tidyverse)
 library(corrplot)
 library(Hmisc)
@@ -42,10 +42,11 @@ corrlt <- rcorr(as.matrix(edx_smp)) # create the correlation object
 corrplot(corrlt$r, type = "upper", order = "hclust", 
          tl.col = "black", tl.srt = 45, title = "Correlation of the Variables") # plot the correlations with their significance
 ```
+
 There is no significant correlation between the variables except for timestamp-movieId and rating-genres which have a positive correlation but with low significance.
 &nbsp;&nbsp;&nbsp;&nbsp;Next we will check if we can reduce the dimensions of our data and understand it with few predictors. We can check for this using principal component analysis. We will exclude the userId in the analysis and use it to represent the users.
 
-```{r edx, echo=FALSE}
+```{r pca, echo=FALSE}
 edx_pc <- edx_smp %>% select(-userId) #deselect the userId
 edx_pca <- prcomp(edx_pc, scale = TRUE)
 screeplot(edx_pca, type = "line", main = "Scree plot", cex.main = 1.8)
