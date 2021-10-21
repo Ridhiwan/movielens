@@ -48,9 +48,9 @@ There is no significant correlation between the variables except for timestamp-m
 &nbsp;&nbsp;&nbsp;&nbsp;Next we will check if we can reduce the dimensions of our data and understand it with few predictors. We can check for this using principal component analysis. We will exclude the userId in the analysis and use it to represent the users.
 
 ```{r pca, echo=FALSE}
-edx_pc <- edx_smp %>% select(-userId) #deselect the userId
-edx_pca <- prcomp(edx_pc, scale = TRUE)
-screeplot(edx_pca, type = "line", main = "Scree plot", cex.main = 1.8)
+edx_pc <- edx_smp %>% select(-userId) # deselect the userId
+edx_pca <- prcomp(edx_pc, scale = TRUE) # produce principal components
+screeplot(edx_pca, type = "line", main = "Scree plot", cex.main = 1.8) # plot screeplot
 ```
 
 In the scree plot the highest variance is contained in the first three principal components and there is only a total of 4 principal components showing that the data can be reduced to fewer dimensions and based on the userId there could be some clear clustering of our data.
@@ -83,4 +83,4 @@ With only two clusters we observe a very good separation of the users in our dat
 
 &nbsp;&nbsp;&nbsp;&nbsp;To this point the dataset that we are using to create our recommendation system is too big to be analyzed fully given our resources. But a sample from the dataset has shown that there is very little to no correlation among the variables in the dataset and that it can be clustered. The models that we will use in our recommendation system should involve clustering in order to get the best performance.
 
-
+### MACHINE LEARNING MODELS
