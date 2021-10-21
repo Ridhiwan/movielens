@@ -44,6 +44,7 @@ corrplot(corrlt$r, type = "upper", order = "hclust",
 ```
 
 There is no significant correlation between the variables except for timestamp-movieId and rating-genres which have a positive correlation but with low significance.
+
 &nbsp;&nbsp;&nbsp;&nbsp;Next we will check if we can reduce the dimensions of our data and understand it with few predictors. We can check for this using principal component analysis. We will exclude the userId in the analysis and use it to represent the users.
 
 ```{r pca, echo=FALSE}
@@ -53,3 +54,16 @@ screeplot(edx_pca, type = "line", main = "Scree plot", cex.main = 1.8)
 ```
 
 In the scree plot the highest variance is contained in the first three principal components and there is only a total of 4 principal components showing that the data can be reduced to fewer dimensions and based on the userId there could be some clear clustering of our data.
+
+&nbsp;&nbsp;&nbsp;&nbsp;From the above principal component analysis it seems that from the sample of our dataset it is possible to cluster our users into different groups.We will try to cluster them using different methods to try and estimate the possible number of different user groups.
+
+```{r hclust, echo=FALSE}
+library(cluster)
+clst <- scale(edx_pc) # scale the data to avoid outliers in clustering
+clst.d <- dist(clst[1:5000]) # calculate a distance matrix of only 10% of our sample dataset because it is too big for our resources
+clst.h <- hclust(clst.d, method = "average") # cluster the data using hierarchical clustering and the method average
+plot(clst.h,hang = -1) # plot the dendogram
+mbr <- cutree(clst.h,20) # choose 5 clusters for my data
+```
+
+The cluster dendogram shows that clusters exist in our data and we will choose 20 clusters to visualize our data and reduce the number or increase the number after the analysis of the produced figure.
