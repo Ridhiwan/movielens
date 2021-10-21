@@ -62,8 +62,25 @@ library(cluster)
 clst <- scale(edx_pc) # scale the data to avoid outliers in clustering
 clst.d <- dist(clst[1:5000]) # calculate a distance matrix of only 10% of our sample dataset because it is too big for our resources
 clst.h <- hclust(clst.d, method = "average") # cluster the data using hierarchical clustering and the method average
-plot(clst.h,hang = -1) # plot the dendogram
-mbr <- cutree(clst.h,20) # choose 5 clusters for my data
+plot(clst.h,hang = -1) # plot the dendrogram
+mbr <- cutree(clst.h,5) # choose 5 clusters for my data
 ```
 
-The cluster dendogram shows that clusters exist in our data and we will choose 20 clusters to visualize our data and reduce the number or increase the number after the analysis of the produced figure.
+The cluster dendrogram shows that clusters exist in our data and we will choose 8 clusters. We will use the silhouette function to observe how good our clustering is when we use 8 clusters.
+
+```{r slht, echo=FALSE}
+sil <- silhouette((cutree(clst.h,8)),clst.d) # create a silhouette object with 8 clusters
+summary(sil)
+```
+
+From the summary the mean silhouette width is not as high as it could be, this signals that some of the clusters may not be very well separated because the number of partitions I have chosen is too high. We will reduce the number to only 2 clusters and rerun our analysis.
+
+```{r slht, echo=FALSE}
+sil <- silhouette((cutree(clst.h,2)),clst.d) # create a silhouette object with 2 clusters
+summary(sil)
+```
+With only two clusters we observe a very good separation of the users in our data. The number of clusters could increase with the number of users added to our analysis. 
+
+&nbsp;&nbsp;&nbsp;&nbsp;To this point the dataset that we are using to create our recommendation system is too big to be analyzed fully given our resources. But a sample from the dataset has shown that there is very little to no correlation among the variables in the dataset and that it can be clustered. The models that we will use in our recommendation system should involve clustering in order to get the best performance.
+
+
