@@ -83,6 +83,8 @@ With only two clusters we observe a very good separation of the users in our dat
 
 &nbsp;&nbsp;&nbsp;&nbsp;To this point the dataset that we are using to create our recommendation system is too big to be analyzed fully given our resources. But a sample from the dataset has shown that there is very little to no correlation among the variables in the dataset and that it can be clustered. The models that we will use in our recommendation system should involve clustering in order to get the best performance.
 
+## METHOD
+
 ### MACHINE LEARNING MODELS
 
 &nbsp;&nbsp;&nbsp;&nbsp;We will start with the simplest model of prediction of ratings of a given movie by given users and move on to better models to try and get the best prediction with our resources. By predicting the rating the user would give to the movie we directly predict the movies that could be highly rated by that user or group of users and can therefore use that prediction to recommend a movie that they will most likely enjoy.
@@ -113,8 +115,30 @@ The first model has an error that is above 1 which is quite high. we will try to
 ```{r model2, echo=FALSE}
 avgs <- train %>% group_by(movieId) %>% summarise(a = mean(rating - mu)) # the average rating for each movie
 predicted_ratings <- mu + test %>% 
-     left_join(movie_avgs, by='movieId') %>%
+     left_join(avgs, by='movieId') %>%
      .$a # our prediction of the rating of movies in the test set
-
-
+second_rmse <- rmse(predicted_ratings,test$rating) # the second prediction's error
+second_rmse
 ```
+
+There is a little improvement with our second model but we will add another parameter which is specific to users and observe if we can improve our model even further.
+
+```{r model3, echo=FALSE}
+avgr <- train %>% left_join(avgs, by = "movieId") %>% group_by(userId) %>% summarise(b = mean(rating - mu - a)) # the average rating given by each user
+predicted_ratings <- test %>% left_join(avgs, by='movieId') %>% left_join(avgr, by='userId') %>% mutate(pred = mu + a + b) %>% .$pred # our prediction of the rating of movies in the test set
+third_rmse <- rmse(predicted_ratings,test$rating) # the third prediction's error
+third_rmse
+```
+
+With the inclusion of the users rating the error is reduced again but it is not very good. We will now try to add another parameter to check if it will improve our predictions of the ratings. We will add a parameter for the average rating of a genre.
+
+
+```{r model4, echo=FALSE}
+avgt <- train %>% left_join(avgs, by = "movieId") %>% left_join(avgr, by = "userId") %>% group_by(genres) %>% summarise(c = mean(rating - mu - a - b)) # the average rating for each genre
+predicted_ratings <- test %>% left_join(avgs, by='movieId') %>% left_join(avgr, by='userId') %>% left_join(avgt, by = "genres") %>% mutate(pred = mu + a + b + c) %>% .$pred # our prediction of the rating of movies in the test set
+fourth_rmse <- rmse(predicted_ratings,test$rating) # the fourth prediction's error
+fourth_rmse
+```
+
+The improvement is very small from the third to the fourth model thus we have to take a different approach to make the results a bit better.
+
