@@ -84,3 +84,37 @@ With only two clusters we observe a very good separation of the users in our dat
 &nbsp;&nbsp;&nbsp;&nbsp;To this point the dataset that we are using to create our recommendation system is too big to be analyzed fully given our resources. But a sample from the dataset has shown that there is very little to no correlation among the variables in the dataset and that it can be clustered. The models that we will use in our recommendation system should involve clustering in order to get the best performance.
 
 ### MACHINE LEARNING MODELS
+
+&nbsp;&nbsp;&nbsp;&nbsp;We will start with the simplest model of prediction of ratings of a given movie by given users and move on to better models to try and get the best prediction with our resources. By predicting the rating the user would give to the movie we directly predict the movies that could be highly rated by that user or group of users and can therefore use that prediction to recommend a movie that they will most likely enjoy.
+
+```{r init, echo=FALSE}
+library(caret)
+set.seed(33)
+test_ind <- createDataPartition(y = edx$rating, times = 1, p = 0.2, list = FALSE) # make a data partition for a test set and train set
+train <- edx[-test_ind,] # training set
+test <- edx[test_ind,] # testing set
+test <- test %>% 
+     semi_join(train, by = "movieId") %>% semi_join(train, by = "userId") # get rid of movies or users that are in the test set but not the training set.
+rmse <- function(ratings, predicted_ratings){
+     sqrt(mean((ratings - predicted_ratings)^2))
+} # a function that calculates the error that we have to minimize to get better models
+```
+
+The first model of prediction will involve only one parameter which is the average rating for all the movies combined. We will assume this as the prediction of the rating for any movie and calculate how far from the truth our prediction is, using the "rmse" function.
+
+```{r, model1, echo=FALSE}
+mu <- mean(train$rating) # average rating for all movies
+first_rmse <- rmse(test$rating,mu) # the first prediction's error
+first_rmse # print rmse
+```
+
+The first model has an error that is above 1 which is quite high. we will try to reduce this by introducing a second parameter which will take into account the average rating of each individual movie instead of the average of all movies.
+
+```{r model2, echo=FALSE}
+avgs <- train %>% group_by(movieId) %>% summarise(a = mean(rating - mu)) # the average rating for each movie
+predicted_ratings <- mu + test %>% 
+     left_join(movie_avgs, by='movieId') %>%
+     .$a # our prediction of the rating of movies in the test set
+
+
+```
