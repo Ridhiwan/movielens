@@ -140,5 +140,62 @@ fourth_rmse <- rmse(predicted_ratings,test$rating) # the fourth prediction's err
 fourth_rmse
 ```
 
-The improvement is very small from the third to the fourth model thus we have to take a different approach to make the results a bit better.
+The improvement is very small from the third to the fourth model thus we have to take a different approach to make the results a bit better. We will try regularization on all the three parameters that we added to the simplest model in order to improve its performance.
 
+```{r regularization, echo=FALSE}
+pens <- seq(0, 10, 0.25) # the range of penalty constants to choose from
+RMSES <- sapply(pens, function(p){
+     a_r <- train %>%
+          group_by(movieId) %>%
+          summarise(a_r = sum(rating - mu)/(n()+p))
+     b_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          group_by(userId) %>%
+          summarise(b_r = sum(rating - a_r - mu)/(n()+p))
+     c_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          left_join(b_r, by="userId") %>%
+          group_by(genres) %>%
+          summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p)) 
+     predicted_ratings <- 
+          test %>% 
+          left_join(a_r, by = "movieId") %>%
+          left_join(b_r, by = "userId") %>%
+          left_join(c_r, by = "genres") %>%
+          mutate(pred = mu + a_r + b_r + c_r) %>%
+          .$pred
+     return(rmse(predicted_ratings, test$rating))
+}) # A function that returns rmses at different penalties
+
+pen <- pens[which.min(RMSES)] # look for the penalty constant which gives the minimum error
+pen # print the penalty constant
+```
+
+The penalty constant tat gives the lowest error is 4.75, now we will check to see what is the value of the lowest error.
+
+```{r model4, echo=FALSE}
+fifth_model <- function(p){
+     a_r <- train %>%
+          group_by(movieId) %>%
+          summarise(a_r = sum(rating - mu)/(n()+p))
+     b_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          group_by(userId) %>%
+          summarise(b_r = sum(rating - a_r - mu)/(n()+p))
+     c_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          left_join(b_r, by="userId") %>%
+          group_by(genres) %>%
+          summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p)) 
+     predicted_ratings <- 
+          test %>% 
+          left_join(a_r, by = "movieId") %>%
+          left_join(b_r, by = "userId") %>%
+          left_join(c_r, by = "genres") %>%
+          mutate(pred = mu + a_r + b_r + c_r) %>%
+          .$pred
+     return(rmse(predicted_ratings, test$rating))
+} # A function that returns the lowest error
+fifth_model(4.75) # calling the function to calculate the error from the fifth model 
+```
+Now we have a bit better improvement to our models but it is still not very good.
