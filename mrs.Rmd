@@ -110,7 +110,7 @@ first_rmse <- rmse(test$rating,mu) # the first prediction's error
 first_rmse # print rmse
 ```
 
-The first model has an error that is above 1 which is quite high. we will try to reduce this by introducing a second parameter which will take into account the average rating of each individual movie instead of the average of all movies.
+The first model has an error that is 1.061258 which is quite high. we will try to reduce this by introducing a second parameter which will take into account the average rating of each individual movie instead of the average of all movies.
 
 ```{r model2, echo=FALSE}
 avgs <- train %>% group_by(movieId) %>% summarise(a = mean(rating - mu)) # the average rating for each movie
@@ -121,7 +121,7 @@ second_rmse <- rmse(predicted_ratings,test$rating) # the second prediction's err
 second_rmse
 ```
 
-There is a little improvement with our second model but we will add another parameter which is specific to users and observe if we can improve our model even further.
+There is a little improvement with our second model with an error of 0.9442879 but we will add another parameter which is specific to users and observe if we can improve our model even further.
 
 ```{r model3, echo=FALSE}
 avgr <- train %>% left_join(avgs, by = "movieId") %>% group_by(userId) %>% summarise(b = mean(rating - mu - a)) # the average rating given by each user
@@ -130,7 +130,7 @@ third_rmse <- rmse(predicted_ratings,test$rating) # the third prediction's error
 third_rmse
 ```
 
-With the inclusion of the users rating the error is reduced again but it is not very good. We will now try to add another parameter to check if it will improve our predictions of the ratings. We will add a parameter for the average rating of a genre.
+With the inclusion of the users rating the error is reduced again to 0.8669478 but it is not very good. We will now try to add another parameter to check if it will improve our predictions of the ratings. We will add a parameter for the average rating of a genre.
 
 
 ```{r model4, echo=FALSE}
@@ -140,7 +140,24 @@ fourth_rmse <- rmse(predicted_ratings,test$rating) # the fourth prediction's err
 fourth_rmse
 ```
 
-The improvement is very small from the third to the fourth model thus we have to take a different approach to make the results a bit better. We will try regularization on all the three parameters that we added to the simplest model in order to improve its performance.
+There is small improvement from third to fourth model with an error of 0.866629 for the latter. We will add another parameter  of the average rating by the time at which the rating was done. To do this we will have to add another column to our train and test sets.
+
+```{r modify, echo=FALSE}
+library(lubridate)
+train <- train %>% mutate(timestamp_t=format(as_datetime(train$timestamp), "%Y-%m-%d")) # add a new column to the training set with new date format
+test <- test %>% mutate(timestamp_t=format(as_datetime(test$timestamp), "%Y-%m-%d")) # add a new column to the test set with new date format
+```
+
+After the modification we can now work on our fifth model using these sets of data.
+
+```{r model5, echo=FALSE}
+avgu <- train %>% left_join(avgs, by = "movieId") %>% left_join(avgr, by = "userId") %>% left_join(avgt, by = "genres") %>% group_by(timestamp_t) %>% summarise(d = mean(rating - mu - a - b - c)) # the average rating for each timestamp
+predicted_ratings <- test %>% left_join(avgs, by='movieId') %>% left_join(avgr, by='userId') %>% left_join(avgt, by = "genres") %>% left_join(avgu, by = "timestamp_t") %>% mutate(pred = mu + a + b + c + d) %>% .$pred # our prediction of the rating of movies in the test set
+fifth_rmse <- rmse(predicted_ratings,test$rating) # the fifth prediction's error
+fifth_rmse
+```
+
+The improvement is much better after the fifth model having an error of 0.8661281 but we have to take a different approach to make the results a bit better. We will try regularization on all the four parameters that we added to the simplest model in order to improve its performance.
 
 ```{r regularization, echo=FALSE}
 pens <- seq(0, 10, 0.25) # the range of penalty constants to choose from
@@ -153,16 +170,23 @@ RMSES <- sapply(pens, function(p){
           group_by(userId) %>%
           summarise(b_r = sum(rating - a_r - mu)/(n()+p))
      c_r <- train %>% 
-          left_join(a_r, by="movieId") %>%
+          left_join(a_r, by="movieId") %>%          
           left_join(b_r, by="userId") %>%
           group_by(genres) %>%
           summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p)) 
+     d_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          left_join(b_r, by="userId") %>%
+          left_join(c_r, by="genres") %>% 
+          group_by(timestamp_t) %>%
+          summarise(d_r = sum(rating - a_r - b_r - c_r - mu)/(n()+p)) 
      predicted_ratings <- 
           test %>% 
           left_join(a_r, by = "movieId") %>%
           left_join(b_r, by = "userId") %>%
           left_join(c_r, by = "genres") %>%
-          mutate(pred = mu + a_r + b_r + c_r) %>%
+          left_join(d_r, by = "timestamp_t") %>%
+          mutate(pred = mu + a_r + b_r + c_r + d_r) %>%
           .$pred
      return(rmse(predicted_ratings, test$rating))
 }) # A function that returns rmses at different penalties
@@ -171,10 +195,10 @@ pen <- pens[which.min(RMSES)] # look for the penalty constant which gives the mi
 pen # print the penalty constant
 ```
 
-The penalty constant tat gives the lowest error is 4.75, now we will check to see what is the value of the lowest error.
+The penalty constant tat gives the lowest error is 5.25, now we will check to see what is the value of the lowest error.
 
-```{r model4, echo=FALSE}
-fifth_model <- function(p){
+```{r model6, echo=FALSE}
+sixth_model <- function(p){
      a_r <- train %>%
           group_by(movieId) %>%
           summarise(a_r = sum(rating - mu)/(n()+p))
@@ -186,16 +210,27 @@ fifth_model <- function(p){
           left_join(a_r, by="movieId") %>%
           left_join(b_r, by="userId") %>%
           group_by(genres) %>%
-          summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p)) 
+          summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p))
+     d_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          left_join(b_r, by="userId") %>%
+          left_join(c_r, by="genres") %>% 
+          group_by(timestamp_t) %>%
+          summarise(d_r = sum(rating - a_r - b_r - c_r - mu)/(n()+p)) 
      predicted_ratings <- 
           test %>% 
           left_join(a_r, by = "movieId") %>%
           left_join(b_r, by = "userId") %>%
           left_join(c_r, by = "genres") %>%
-          mutate(pred = mu + a_r + b_r + c_r) %>%
+          left_join(d_r, by = "timestamp_t") %>%
+          mutate(pred = mu + a_r + b_r + c_r + d_r) %>%
           .$pred
      return(rmse(predicted_ratings, test$rating))
 } # A function that returns the lowest error
-fifth_model(4.75) # calling the function to calculate the error from the fifth model 
+sixth_model(5.25) # calling the function to calculate the error from the sixth model 
 ```
-Now we have a bit better improvement to our models but it is still not very good.
+Now we have a much better improvement to the error in our sixth model, reducing it from 1.061258 in the first model to 0.8654189 in the sixth model.
+
+## RESULTS
+
+
