@@ -88,6 +88,8 @@ With only two clusters we observe a very good separation of the users in our dat
 
 ## METHOD
 
+## METHOD
+
 ### MACHINE LEARNING MODELS
 
 &nbsp;&nbsp;&nbsp;&nbsp;We will start with the simplest model of prediction of ratings of a given movie by given users and move on to better models to try and get the best prediction with our resources. By predicting the rating the user would give to the movie we directly predict the movies that could be highly rated by that user or group of users and can therefore use that prediction to recommend a movie that they will most likely enjoy.
@@ -102,10 +104,14 @@ train <- edx[-test_ind,] # training set
 test <- edx[test_ind,] # testing set
 
 test <- test %>% 
+<<<<<<< HEAD
      semi_join(train, by = "movieId") %>% 
      semi_join(train, by = "userId")
      # get rid of movies or users that are in the test set but not the training set.
 
+=======
+     semi_join(train, by = "movieId") %>% semi_join(train, by = "userId") # get rid of movies or users that are in the test set but not the training set.
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 rmse <- function(predicted_ratings,ratings){
      sqrt(mean((ratings - predicted_ratings)^2))
 } 
@@ -121,16 +127,35 @@ first_rmse # print rmse
 ```
 
 The first model has an error that is 1.061258 which is quite high. we will try to reduce this by introducing a second parameter which will take into account the average rating of each individual movie instead of the average of all movies.
+<<<<<<< HEAD
 
 ```{r model2, echo=TRUE}
 avgs <- train %>% 
   group_by(movieId) %>%
   summarise(a = mean(rating - mu)) # the average rating for each movie
+=======
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 
 predicted_ratings <- mu + test %>% 
      left_join(avgs, by='movieId') %>%
      .$a # our prediction of the rating of movies in the test set
+second_rmse <- rmse(predicted_ratings,test$rating) # the second prediction's error
+second_rmse
+```
 
+There is a little improvement with our second model with an error of 0.9442879 but we will add another parameter which is specific to users and observe if we can improve our model even further.
+
+```{r model3, echo=FALSE}
+avgr <- train %>% left_join(avgs, by = "movieId") %>% group_by(userId) %>% summarise(b = mean(rating - mu - a)) # the average rating given by each user
+predicted_ratings <- test %>% left_join(avgs, by='movieId') %>% left_join(avgr, by='userId') %>% mutate(pred = mu + a + b) %>% .$pred # our prediction of the rating of movies in the test set
+third_rmse <- rmse(predicted_ratings,test$rating) # the third prediction's error
+third_rmse
+```
+
+With the inclusion of the users rating the error is reduced again to 0.8669478 but it is not very good. We will now try to add another parameter to check if it will improve our predictions of the ratings. We will add a parameter for the average rating of a genre.
+
+
+<<<<<<< HEAD
 second_rmse <- rmse(predicted_ratings,test$rating) # the second prediction's error
 second_rmse
 ```
@@ -170,12 +195,18 @@ predicted_ratings <- test %>%
   mutate(pred = mu + a + b + c) %>%
   .$pred # our prediction of the rating of movies in the test set
 
+=======
+```{r model4, echo=FALSE}
+avgt <- train %>% left_join(avgs, by = "movieId") %>% left_join(avgr, by = "userId") %>% group_by(genres) %>% summarise(c = mean(rating - mu - a - b)) # the average rating for each genre
+predicted_ratings <- test %>% left_join(avgs, by='movieId') %>% left_join(avgr, by='userId') %>% left_join(avgt, by = "genres") %>% mutate(pred = mu + a + b + c) %>% .$pred # our prediction of the rating of movies in the test set
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 fourth_rmse <- rmse(predicted_ratings,test$rating) # the fourth prediction's error
 fourth_rmse
 ```
 
 There is small improvement from third to fourth model with an error of 0.866629 for the latter. We will add another parameter  of the average rating by the time at which the rating was done. To do this we will have to add another column to our train and test sets.
 
+<<<<<<< HEAD
 ```{r modify, echo=TRUE}
 library(lubridate)
 train <- train %>%
@@ -184,10 +215,17 @@ train <- train %>%
 test <- test %>%
   mutate(timestamp_t=format(as_datetime(test$timestamp), "%Y-%m-%d"))
 # add a new column to the test set with new date format
+=======
+```{r modify, echo=FALSE}
+library(lubridate)
+train <- train %>% mutate(timestamp_t=format(as_datetime(train$timestamp), "%Y-%m-%d")) # add a new column to the training set with new date format
+test <- test %>% mutate(timestamp_t=format(as_datetime(test$timestamp), "%Y-%m-%d")) # add a new column to the test set with new date format
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 ```
 
 After the modification we can now work on our fifth model using these sets of data.
 
+<<<<<<< HEAD
 ```{r model5, echo=TRUE}
 avgu <- train %>%
   left_join(avgs, by = "movieId") %>%
@@ -205,37 +243,60 @@ predicted_ratings <- test %>%
   mutate(pred = mu + a + b + c + d) %>%
   .$pred # our prediction of the rating of movies in the test set
 
+=======
+```{r model5, echo=FALSE}
+avgu <- train %>% left_join(avgs, by = "movieId") %>% left_join(avgr, by = "userId") %>% left_join(avgt, by = "genres") %>% group_by(timestamp_t) %>% summarise(d = mean(rating - mu - a - b - c)) # the average rating for each timestamp
+predicted_ratings <- test %>% left_join(avgs, by='movieId') %>% left_join(avgr, by='userId') %>% left_join(avgt, by = "genres") %>% left_join(avgu, by = "timestamp_t") %>% mutate(pred = mu + a + b + c + d) %>% .$pred # our prediction of the rating of movies in the test set
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 fifth_rmse <- rmse(predicted_ratings,test$rating) # the fifth prediction's error
 fifth_rmse
 ```
 
 The improvement is much better after the fifth model having an error of 0.8661281 but we have to take a different approach to make the results a bit better. We will try regularization on all the four parameters that we added to the simplest model in order to improve its performance.
 
+<<<<<<< HEAD
 ```{r regularization, echo=TRUE, eval=FALSE}
+=======
+```{r regularization, echo=FALSE}
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 pens <- seq(0, 10, 0.25) # the range of penalty constants to choose from
 RMSES <- sapply(pens, function(p){
      a_r <- train %>%
           group_by(movieId) %>%
           summarise(a_r = sum(rating - mu)/(n()+p))
+<<<<<<< HEAD
      # regularization of the parameter
+=======
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
      b_r <- train %>% 
           left_join(a_r, by="movieId") %>%
           group_by(userId) %>%
           summarise(b_r = sum(rating - a_r - mu)/(n()+p))
+<<<<<<< HEAD
      # regularization of the parameter
+=======
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
      c_r <- train %>% 
           left_join(a_r, by="movieId") %>%          
           left_join(b_r, by="userId") %>%
           group_by(genres) %>%
+<<<<<<< HEAD
           summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p))
      # regularization of the parameter 
+=======
+          summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p)) 
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
      d_r <- train %>% 
           left_join(a_r, by="movieId") %>%
           left_join(b_r, by="userId") %>%
           left_join(c_r, by="genres") %>% 
           group_by(timestamp_t) %>%
+<<<<<<< HEAD
           summarise(d_r = sum(rating - a_r - b_r - c_r - mu)/(n()+p))
      # regularization of the parameter
+=======
+          summarise(d_r = sum(rating - a_r - b_r - c_r - mu)/(n()+p)) 
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
      predicted_ratings <- 
           test %>% 
           left_join(a_r, by = "movieId") %>%
@@ -243,7 +304,11 @@ RMSES <- sapply(pens, function(p){
           left_join(c_r, by = "genres") %>%
           left_join(d_r, by = "timestamp_t") %>%
           mutate(pred = mu + a_r + b_r + c_r + d_r) %>%
+<<<<<<< HEAD
           .$pred # making the prediction of ratings
+=======
+          .$pred
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
      return(rmse(predicted_ratings, test$rating))
 }) # A function that returns rmses at different penalties
 
@@ -251,9 +316,15 @@ pen <- pens[which.min(RMSES)] # look for the penalty constant which gives the mi
 pen # print the penalty constant
 ```
 
+<<<<<<< HEAD
 The penalty constant that gives the lowest error is 5.25, now we will check to see what is the value of the lowest error.
 
 ```{r model6, echo=TRUE, eval=FALSE}
+=======
+The penalty constant tat gives the lowest error is 5.25, now we will check to see what is the value of the lowest error.
+
+```{r model6, echo=FALSE}
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 sixth_model <- function(p){
      a_r <- train %>%
           group_by(movieId) %>%
@@ -291,16 +362,25 @@ Now we have a much better improvement to the error in our sixth model, reducing 
 
 &nbsp;&nbsp;&nbsp;&nbsp;We will prepare our validation set to check the actual error of our model.
 
+<<<<<<< HEAD
 ```{r validation, echo=TRUE}
+=======
+```{r validation, echo=FALSE}
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 library(tidyverse)
 library(lubridate)
 load("validation")
 validation_edit <- validation %>% 
+<<<<<<< HEAD
      semi_join(train, by = "movieId") %>%
   semi_join(train, by = "userId") 
 # get rid of movies or users that are in the validation set but not the training set.
 validation_edit <- validation_edit %>% mutate(timestamp_t=format(as_datetime(validation_edit$timestamp),"%Y-%m-%d"))
 # add a new column to the validation set with new date format
+=======
+     semi_join(train, by = "movieId") %>% semi_join(train, by = "userId") # get rid of movies or users that are in the validation set but not the training set.
+validation_edit <- validation_edit %>% mutate(timestamp_t=format(as_datetime(validation_edit$timestamp), "%Y-%m-%d")) # add a new column to the validation set with new date format
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
 sixth_model <- function(p){
      a_r <- train %>%
           group_by(movieId) %>%
@@ -333,6 +413,7 @@ sixth_model <- function(p){
 sixth_model(5.25) # calling the function to calculate the error from the sixth model
 
 ```
+<<<<<<< HEAD
 
 From the validation set we obtain an error of 0.8647672 from our sixth and final model. This result is much better and shows that our model is not the best but it is good enough to be usable in predictions of ratings and in movie recommendation systems. 
 
@@ -345,3 +426,7 @@ From the validation set we obtain an error of 0.8647672 from our sixth and final
 &nbsp;&nbsp;&nbsp;&nbsp;The machine learning models that we used proved to be useful in the automation of rating prediction of the movies that they were provided from the validation set. They are several short comings to our prediction model; we are overfitting our data as our validation set is not an original data set but a fraction of the data set that we used to train and test our models, our model for machine learning is only based on average variations and our machine learning model could be improved by using more advanced models available in the literature. For future applications a computer with higher specifications that can handle much larger workloads should be used to avoid long wait times for calculations to finish processing. Better machine learning models and even deep learning models might work wonders in prediction of ratings.
 
 &nbsp;&nbsp;&nbsp;&nbsp;To conclude the bottle necks faced in the project are not substantial and can be easily alleviated with a few changes in the computational resources used and the learning models.
+=======
+
+From the validation set we obtain an error of 0.8647672 from our sixth and final model. This result is much better and shows that our model is not the best but it is good enough to be usable in predictions of ratings and in movie recommendation systems.
+>>>>>>> 57080409d5942124385ffb94af5ca387e2f0739c
