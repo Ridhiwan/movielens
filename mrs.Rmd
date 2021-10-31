@@ -97,7 +97,7 @@ train <- edx[-test_ind,] # training set
 test <- edx[test_ind,] # testing set
 test <- test %>% 
      semi_join(train, by = "movieId") %>% semi_join(train, by = "userId") # get rid of movies or users that are in the test set but not the training set.
-rmse <- function(ratings, predicted_ratings){
+rmse <- function(predicted_ratings,ratings){
      sqrt(mean((ratings - predicted_ratings)^2))
 } # a function that calculates the error that we have to minimize to get better models
 ```
@@ -233,4 +233,46 @@ Now we have a much better improvement to the error in our sixth model, reducing 
 
 ## RESULTS
 
+&nbsp;&nbsp;&nbsp;&nbsp;We will prepare our validation set to check the actual error of our model.
 
+```{r validation, echo=FALSE}
+library(tidyverse)
+library(lubridate)
+load("validation")
+validation_edit <- validation %>% 
+     semi_join(train, by = "movieId") %>% semi_join(train, by = "userId") # get rid of movies or users that are in the validation set but not the training set.
+validation_edit <- validation_edit %>% mutate(timestamp_t=format(as_datetime(validation_edit$timestamp), "%Y-%m-%d")) # add a new column to the validation set with new date format
+sixth_model <- function(p){
+     a_r <- train %>%
+          group_by(movieId) %>%
+          summarise(a_r = sum(rating - mu)/(n()+p))
+     b_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          group_by(userId) %>%
+          summarise(b_r = sum(rating - a_r - mu)/(n()+p))
+     c_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          left_join(b_r, by="userId") %>%
+          group_by(genres) %>%
+          summarise(c_r = sum(rating - a_r - b_r - mu)/(n()+p))
+     d_r <- train %>% 
+          left_join(a_r, by="movieId") %>%
+          left_join(b_r, by="userId") %>%
+          left_join(c_r, by="genres") %>% 
+          group_by(timestamp_t) %>%
+          summarise(d_r = sum(rating - a_r - b_r - c_r - mu)/(n()+p)) 
+     predicted_ratings <- 
+          validation_edit %>% 
+          left_join(a_r, by = "movieId") %>%
+          left_join(b_r, by = "userId") %>%
+          left_join(c_r, by = "genres") %>%
+          left_join(d_r, by = "timestamp_t") %>%
+          mutate(pred = mu + a_r + b_r + c_r + d_r) %>%
+          .$pred
+     return(rmse(predicted_ratings, validation_edit$rating))
+} # A function that returns the lowest error
+sixth_model(5.25) # calling the function to calculate the error from the sixth model
+
+```
+
+From the validation set we obtain an error of 0.8647672 from our sixth and final model. This result is much better and shows that our model is not the best but it is good enough to be usable in predictions of ratings and in movie recommendation systems.
