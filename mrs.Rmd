@@ -321,13 +321,11 @@ library(lubridate)
 load("validation")
 validation_edit <- validation %>% 
      semi_join(train, by = "movieId") %>%
-  semi_join(train, by = "userId") 
+     semi_join(train, by = "userId") 
 # get rid of movies or users that are in the validation set but not the training set.
+
 validation_edit <- validation_edit %>% mutate(timestamp_t=format(as_datetime(validation_edit$timestamp),"%Y-%m-%d"))
 # add a new column to the validation set with new date format
-
-     semi_join(train, by = "movieId") %>% semi_join(train, by = "userId") # get rid of movies or users that are in the validation set but not the training set.
-validation_edit <- validation_edit %>% mutate(timestamp_t=format(as_datetime(validation_edit$timestamp), "%Y-%m-%d")) # add a new column to the validation set with new date format
 
 sixth_model <- function(p){
      a_r <- train %>%
